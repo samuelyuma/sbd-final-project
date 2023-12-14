@@ -4,13 +4,13 @@ START TRANSACTION;
 
 -- Step 1: Insert new customer
 INSERT INTO customer (nama_customer, alamat_customer, email_customer) 
-VALUES ('John Doe', '123 Main St', 'john.doe@example.com');
+VALUES ('Yuma', 'Keputih Perintis', 'yuma@example.com');
 
 -- Step 2: Insert corresponding order with a complex subquery
 INSERT INTO pemesanan (tanggal_pemesanan, id_customer, id_hewan, id_pakan) 
 VALUES (CURDATE(), LAST_INSERT_ID(), 
-        (SELECT id_hewan FROM Hewan WHERE jenis_hewan = 'Dog' ORDER BY RAND() LIMIT 1),
-        (SELECT id_pakan FROM Pakan_Hewan WHERE tipe_pakan = 'Premium' ORDER BY stok_pakan DESC LIMIT 1)
+        (SELECT id_hewan FROM Hewan WHERE jenis_hewan = 'Mutant' ORDER BY RAND() LIMIT 1),
+        (SELECT id_pakan FROM Pakan_Hewan WHERE tipe_pakan = 'Tulang' ORDER BY stok_pakan DESC LIMIT 1)
 );
 
 COMMIT; -- If all steps are successful
@@ -18,65 +18,66 @@ COMMIT; -- If all steps are successful
 
 -- VIEW
 
-CREATE VIEW CustomerOrderView AS
+CREATE VIEW TampilkanPesananPelanggan AS
 SELECT 
-    customer.id_customer,
-    customer.nama_customer,
-    customer.alamat_customer,
-    customer.email_customer,
-    pemesanan.id_pemesanan,
-    pakan.tanggal_pemesanan,
-    hewan.jenis_hewan,
-    pakan_hewan.tipe_pakan
+    customer.id_customer AS 'ID Customer',
+    customer.nama_customer AS 'Nama Customer',
+    customer.alamat_customer AS 'Alamat Customer',
+    customer.email_customer AS 'Email Customer',
+    pemesanan.id_pemesanan AS 'ID Pemesanan',
+    pemesanan.tanggal_pemesanan AS 'Tanggal Pemesanan',
+    hewan.jenis_hewan AS 'Jenis Hewan',
+    pakan_hewan.tipe_pakan AS 'Tipe Pakan',
+    COUNT(pemesanan.id_pemesanan) AS 'Jumlah Pesanan'
 FROM customer
 JOIN pemesanan ON customer.id_customer = pemesanan.id_customer
 JOIN hewan ON pemesanan.id_hewan = hewan.id_hewan
 JOIN pakan_hewan ON pakan_hewan.id_pakan = pakan_hewan.id_pakan
 WHERE hewan.stok_hewan > 0
+GROUP BY customer.id_customer, hewan.jenis_hewan
+HAVING COUNT(pemesanan.id_pemesanan) > 1
 ORDER BY pemesanan.tanggal_pemesanan DESC;
+
+-- Example usage:
+-- SELECT * FROM TampilkanPesananPelanggan LIMIT 10;
 
 -- STORED PROCEDURE
 
 DELIMITER //
-CREATE PROCEDURE UpdateStockAnimalType(IN animal_type VARCHAR(256), IN new_stock VARCHAR(256))
+CREATE PROCEDURE UpdateStokHewan(IN animal_type VARCHAR(256), IN new_stock VARCHAR(256))
 BEGIN
     UPDATE hewan
     SET stok_hewan = new_stock
-    WHERE jenis_hewan = animal_type
+    WHERE tipe_hewan = animal_type
     AND stok_hewan > 0;
 END //
 DELIMITER ;
 
 -- Example usage:
--- CALL UpdateStockAnimalType('Dog', '50');
+-- CALL UpdateStokHewan('Bulldog', '50');
 
 -- STORED FUNCTION
 
 DELIMITER //
-CREATE FUNCTION CalculateOrderTotalCost(order_id INT(11)) RETURNS INT(11)
+CREATE FUNCTION TotalPembayaran(id_customer INT) RETURNS VARCHAR(256)
 BEGIN
-    DECLARE totalCost INT(11);
-
+    DECLARE total_and_name VARCHAR(256);
     SELECT 
-        (hewan.harga_hewan + pakan_hewan.harga_satuan_pakan) AS total
-    INTO totalCost
-    FROM pemesanan
-    JOIN hewan ON pemesanan.id_hewan = hewan.id_hewan
-    JOIN pakan_hewan ON pemesanan.id_pakan = pakan_hewan.id_pakan
-    WHERE pemesanan.id_pemesanan = order_id
-    GROUP BY pemesanan.id_pemesanan
-    HAVING totalCost > 0;
-
-    RETURN totalCost;
+        CONCAT('Nama: ', customer.nama_customer, ', Total Pembayaran: ', SUM(pembayaran.jumlah_pembayaran), ) INTO total_and_name
+    FROM pembayaran
+    JOIN pemesanan ON pembayaran.id_pemesanan = pemesanan.id_pemesanan
+    JOIN customer ON pemesanan.id_customer = customer.id_customer
+    WHERE pemesanan.id_customer = id_customer;
+    RETURN total_and_name;
 END //
 DELIMITER ;
 
 -- Example usage:
--- SELECT CalculateOrderTotalCost(1) AS totalCost;
+-- SELECT * FROM DetailTotalPembayaran(1);
 
 -- TRIGGER
 
-CREATE TRIGGER UpdateStockOnOrder
+CREATE TRIGGER KurangiStokHewanDanPakan
 AFTER INSERT ON pemesanan
 FOR EACH ROW
 BEGIN
