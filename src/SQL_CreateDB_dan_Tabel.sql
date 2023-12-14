@@ -1,4 +1,4 @@
--- CREATE DATABASE toko_hewan_ceria;
+CREATE DATABASE toko_hewan_ceria;
 
 CREATE TABLE Kategori_Hewan (
     id_kategori_hewan INT(11) PRIMARY KEY,
@@ -65,4 +65,3 @@ CREATE TABLE Pembayaran (
     FOREIGN KEY (id_staff) REFERENCES Staff(id_staff),
     FOREIGN KEY (id_pemesanan) REFERENCES Pemesanan(id_pemesanan)
 );
-

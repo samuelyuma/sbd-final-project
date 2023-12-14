@@ -2,19 +2,21 @@
 
 START TRANSACTION;
 
--- Step 1: Insert new customer
-INSERT INTO customer (nama_customer, alamat_customer, email_customer) 
-VALUES ('Yuma', 'Keputih Perintis', 'yuma@example.com');
+INSERT INTO Customer (nama_customer, alamat_customer, email_customer) VALUES ('Gavriel', 'Ungaran', 'adi@example.com');
+SET @customer_id = LAST_INSERT_ID();
 
--- Step 2: Insert corresponding order with a complex subquery
-INSERT INTO pemesanan (tanggal_pemesanan, id_customer, id_hewan, id_pakan) 
-VALUES (CURDATE(), LAST_INSERT_ID(), 
-        (SELECT id_hewan FROM Hewan WHERE jenis_hewan = 'Mutant' ORDER BY RAND() LIMIT 1),
-        (SELECT id_pakan FROM Pakan_Hewan WHERE tipe_pakan = 'Tulang' ORDER BY stok_pakan DESC LIMIT 1)
-);
+INSERT INTO Hewan (jenis_hewan, tipe_hewan, harga_hewan, stok_hewan, deskripsi_hewan, id_kategori_hewan)
+VALUES ('Kanibal', 'Virginia', 500, 5, 'Friendly and playful', (SELECT id_kategori_hewan FROM (SELECT * FROM Kategori_Hewan) AS subquery WHERE nama_kategori_hewan = 'Pet'));
 
-COMMIT; -- If all steps are successful
--- ROLLBACK; -- Uncomment this line to simulate a failure (e.g., duplicate email in Step 1)
+SET @hewan_id = LAST_INSERT_ID();
+
+INSERT INTO Pemesanan (tanggal_pemesanan, id_customer, id_hewan) VALUES (CURDATE(), @customer_id, @hewan_id);
+SET @pemesanan_id = LAST_INSERT_ID();
+
+INSERT INTO Pembayaran (jumlah_pembayaran, detail_pembayaran, id_staff, id_pemesanan)
+VALUES (600, 'Paid for the order', (SELECT id_staff FROM (SELECT * FROM Staff) AS subquery WHERE nama_staff = 'Benetta'), @pemesanan_id);
+
+ROLLBACK;
 
 -- VIEW
 
@@ -73,7 +75,7 @@ END //
 DELIMITER ;
 
 -- Example usage:
--- SELECT * FROM DetailTotalPembayaran(1);
+-- SELECT * FROM TotalPembayaran(1);
 
 -- TRIGGER
 
