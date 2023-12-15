@@ -80,7 +80,7 @@ END //
 DELIMITER ;
 
 -- Example usage:
--- SELECT * FROM TotalPembayaran(1);
+-- SELECT TotalPembayaran(1);
 
 -- TRIGGER
 
@@ -98,3 +98,7 @@ BEGIN
     WHERE id_pakan = NEW.id_pakan AND stok_pakan > 0;
 END //
 DELIMITER ;
+
+-- Example usage:
+-- INSERT INTO Pemesanan (tanggal_pemesanan, id_customer, id_hewan, id_pakan)
+-- VALUES ('2023-12-14', 2, 3, 4);
